@@ -85,10 +85,11 @@ def dependency_mapping_node(state: AgentState):
 def smart_scheduler_node(state: AgentState):
     print("--- Node: Scheduler ---")
 
+    insights = state.get("insights", [])
+    latest_insight = insights[-1] if insights else "None"
+
     class SimpleSchedItem(BaseModel):
-        task_id: str = Field(
-            ..., validation_alias=AliasChoices("task_id", "id", "task_name")
-        )
+        task_id: str = Field(..., validation_alias=AliasChoices("task_id", "id", "task_name"))
         start: SafeInt = Field(..., validation_alias=AliasChoices("start", "start_day"))
         end: SafeInt = Field(..., validation_alias=AliasChoices("end", "end_day"))
 
@@ -113,12 +114,16 @@ def smart_scheduler_node(state: AgentState):
     prompt = f"""
     Schedule tasks: {state['tasks']}
     Dependencies: {state.get('dependencies')}
-    
-    CRITICAL INSTRUCTIONS: 
+
+    Previous optimization insight (MUST apply if not None):
+    {latest_insight}
+
+    CRITICAL INSTRUCTIONS:
     1. Return JSON with start/end days (integers).
     2. If circular dependency detected, BREAK THE LOOP and assign best guess integer.
     3. DO NOT return null. Start day must be an integer (0, 1, 2...).
     """
+
     struct_llm = llm.with_structured_output(SimpleSched, method="json_mode")
     resp = struct_llm.invoke(prompt)
 
@@ -131,6 +136,7 @@ def smart_scheduler_node(state: AgentState):
         if task:
             s = item.start if item.start >= 0 else 0
             e = item.end if item.end >= 0 else s + 1
+            e = max(e, s + 1)
             final_sched.append(TaskSchedule(task=task, start_day=s, end_day=e))
 
     return {"schedule": Schedule(schedule=final_sched)}

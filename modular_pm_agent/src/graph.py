@@ -8,8 +8,9 @@ from src.nodes import (
 )
 
 def routing_logic(state: AgentState):
-    # Stop if max iterations reached or risk score is low (< 15)
-    last_score = state['project_risk_score_iterations'][-1]
+    scores = state.get("project_risk_score_iterations", [])
+    last_score = scores[-1] if scores else 999  # treat as high risk if missing
+
     if state["iteration_number"] >= state["max_iteration"] or last_score < 15:
         return END
     return "optimizer"

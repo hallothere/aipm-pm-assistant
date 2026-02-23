@@ -1,11 +1,12 @@
 from typing import TypedDict, List
-from src.models import Team, TaskList, Schedule, TaskAllocationList, RiskList
+from src.models import Team, TaskList, Schedule, TaskAllocationList, RiskList, Dependency
+
 
 class AgentState(TypedDict):
     project_description: str
     team: Team
     tasks: TaskList
-    dependencies: List[dict]
+    dependencies: List[Dependency]
     schedule: Schedule
     task_allocations: TaskAllocationList
     risks: RiskList
